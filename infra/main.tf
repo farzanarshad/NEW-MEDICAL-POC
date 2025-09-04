@@ -72,6 +72,9 @@ resource "azurerm_cognitive_account" "speech" {
   kind                = "SpeechServices"
   sku_name            = var.speech_service_sku
   
+  # Handle soft-deleted resources
+  restore = false
+  
   tags = {
     Project     = var.project
     Environment = var.env

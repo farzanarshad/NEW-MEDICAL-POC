@@ -1,0 +1,28 @@
+# Alternative deployment configuration for regions with quota issues
+# Copy this to terraform.tfvars and modify as needed
+
+# Required variables
+project = "medasr"
+
+# Try different regions that often have quota available
+env = "dev"
+location = "westus2"  # Alternative: centralus, southcentralus, northcentralus
+
+# Speech recognition settings
+asr_language = "en-US"
+asr_medical = true
+
+# Authentication (leave empty to auto-generate)
+api_bearer_token = ""
+
+# CORS origins (add your frontend URLs)
+allowed_origins = [
+  "http://localhost:5500",
+  "http://127.0.0.1:5500", 
+  "http://localhost:8000",
+  "http://localhost:3000"
+]
+
+# Resource SKUs (minimal cost for POC)
+app_service_plan_sku = "F1"
+speech_service_sku = "S0"
