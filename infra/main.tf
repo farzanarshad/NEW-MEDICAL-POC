@@ -1,3 +1,6 @@
+# Azure VM-based deployment for medical transcription
+# This avoids App Service Plan quota issues entirely
+
 locals {
   # Resource naming
   name_prefix = "${var.project}-${var.env}"
@@ -7,6 +10,10 @@ locals {
   
   # Generate bearer token if not provided
   bearer_token = var.api_bearer_token != "" ? var.api_bearer_token : random_string.bearer_token.result
+  
+  # VM configuration
+  vm_size = "Standard_B1s"  # Small VM, good for POC
+  admin_username = "azureuser"
 }
 
 # Random resources
@@ -22,6 +29,14 @@ resource "random_string" "bearer_token" {
   upper   = true
 }
 
+resource "random_password" "vm_password" {
+  length  = 16
+  special = true
+  upper   = true
+  lower   = true
+  numeric = true
+}
+
 # Resource Group
 resource "azurerm_resource_group" "main" {
   name     = "${local.name_prefix}-rg"
@@ -32,6 +47,134 @@ resource "azurerm_resource_group" "main" {
     Environment = var.env
     ManagedBy   = "Terraform"
   }
+}
+
+# Virtual Network
+resource "azurerm_virtual_network" "main" {
+  name                = "${local.name_prefix}-vnet"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  address_space       = ["10.0.0.0/16"]
+  
+  tags = {
+    Project     = var.project
+    Environment = var.env
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Subnet
+resource "azurerm_subnet" "main" {
+  name                 = "${local.name_prefix}-subnet"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+# Network Security Group
+resource "azurerm_network_security_group" "main" {
+  name                = "${local.name_prefix}-nsg"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  
+  # SSH access
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  
+  # HTTP access
+  security_rule {
+    name                       = "HTTP"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  
+  # HTTPS access
+  security_rule {
+    name                       = "HTTPS"
+    priority                   = 1003
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  
+  # WebSocket/App port
+  security_rule {
+    name                       = "AppPort"
+    priority                   = 1004
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "8000"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  
+  tags = {
+    Project     = var.project
+    Environment = var.env
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Public IP
+resource "azurerm_public_ip" "main" {
+  name                = "${local.name_prefix}-pip"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  
+  tags = {
+    Project     = var.project
+    Environment = var.env
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Network Interface
+resource "azurerm_network_interface" "main" {
+  name                = "${local.name_prefix}-nic"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.main.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.main.id
+  }
+  
+  tags = {
+    Project     = var.project
+    Environment = var.env
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Connect NSG to NIC
+resource "azurerm_network_interface_security_group_association" "main" {
+  network_interface_id      = azurerm_network_interface.main.id
+  network_security_group_id = azurerm_network_security_group.main.id
 }
 
 # Storage Account
@@ -79,13 +222,44 @@ resource "azurerm_cognitive_account" "speech" {
   }
 }
 
-# App Service Plan
-resource "azurerm_service_plan" "main" {
-  name                = "${local.name_prefix}-plan"
+# Virtual Machine
+resource "azurerm_linux_virtual_machine" "main" {
+  name                = "${local.name_prefix}-vm"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  os_type             = "Linux"
-  sku_name            = var.app_service_plan_sku
+  size                = local.vm_size
+  admin_username      = local.admin_username
+  admin_password      = random_password.vm_password.result
+  disable_password_authentication = false
+  
+  network_interface_ids = [
+    azurerm_network_interface.main.id,
+  ]
+  
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+  
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+  
+  # Custom data script to install and configure the application
+  custom_data = base64encode(templatefile("${path.module}/vm-setup.sh", {
+    speech_region = azurerm_cognitive_account.speech.location
+    speech_key    = "" # Will be set manually
+    storage_account = azurerm_storage_account.main.name
+    blob_container = azurerm_storage_container.transcripts.name
+    asr_language  = var.asr_language
+    asr_medical   = var.asr_medical
+    bearer_token  = local.bearer_token
+    allowed_origins = join(",", var.allowed_origins)
+    session_timeout = "300"
+  }))
   
   tags = {
     Project     = var.project
@@ -94,75 +268,16 @@ resource "azurerm_service_plan" "main" {
   }
 }
 
-# App Service
-resource "azurerm_linux_web_app" "main" {
-  name                = "${local.name_prefix}-app"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  service_plan_id     = azurerm_service_plan.main.id
-  
-  # Enable WebSockets
-  site_config {
-    application_stack {
-      python_version = "3.11"
-    }
-    
-    websockets_enabled = true
-    
-    # Health check
-    health_check_path = "/healthz"
-    
-    # CORS settings
-    cors {
-      allowed_origins = var.allowed_origins
-      support_credentials = true
-    }
-  }
-  
-  # System-assigned managed identity
-  identity {
-    type = "SystemAssigned"
-  }
-  
-  # App settings
-  app_settings = {
-    # Azure Speech settings
-    "AZURE_SPEECH_REGION" = azurerm_cognitive_account.speech.location
-    "AZURE_SPEECH_KEY"    = "" # Will be set manually after deployment
-    
-    # Storage settings
-    "AZURE_STORAGE_ACCOUNT" = azurerm_storage_account.main.name
-    "AZURE_BLOB_CONTAINER" = azurerm_storage_container.transcripts.name
-    
-    # Application settings
-    "ASR_LANGUAGE"         = var.asr_language
-    "ASR_MEDICAL"          = var.asr_medical
-    "API_BEARER_TOKEN"     = local.bearer_token
-    "ALLOWED_ORIGINS"      = join(",", var.allowed_origins)
-    "SESSION_TIMEOUT_SEC"  = "300"
-    
-    # Logging
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT"      = "true"
-  }
-  
-  tags = {
-    Project     = var.project
-    Environment = var.env
-    ManagedBy   = "Terraform"
-  }
-}
-
-# Role assignment for App Service to access Storage
+# Role assignment for VM to access Storage
 resource "azurerm_role_assignment" "storage_blob_contributor" {
   scope                = azurerm_storage_account.main.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_web_app.main.identity[0].principal_id
+  principal_id         = azurerm_linux_virtual_machine.main.identity[0].principal_id
 }
 
-# Role assignment for App Service to access Cognitive Services
+# Role assignment for VM to access Cognitive Services
 resource "azurerm_role_assignment" "cognitive_services_user" {
   scope                = azurerm_cognitive_account.speech.id
   role_definition_name = "Cognitive Services User"
-  principal_id         = azurerm_linux_web_app.main.identity[0].principal_id
+  principal_id         = azurerm_linux_virtual_machine.main.identity[0].principal_id
 }

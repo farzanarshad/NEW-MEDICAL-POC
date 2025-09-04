@@ -84,7 +84,7 @@ EOF
 
 # Use VM configuration
 echo "🖥️  Using VM-based configuration..."
-cp main-vm.tf main.tf
+# main.tf is already the VM configuration
 
 # Deploy infrastructure
 echo "🏗️  Deploying VM infrastructure..."

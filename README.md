@@ -28,39 +28,36 @@ A production-ready proof of concept for real-time medical transcription using Az
 
 ## Quick Start
 
-### 1. Deploy Infrastructure
-
+### Option 1: VM-based Deployment (Recommended)
 ```bash
+# Deploy using Azure Virtual Machine (no quota issues)
+./deploy-vm.sh
+```
+
+### Option 2: Alternative Deployments
+```bash
+# Switch between different deployment options
+./switch-deployment.sh
+
+# Or use the alternative deployment script
+./deploy-alternative.sh
+```
+
+### Option 3: Manual Deployment
+```bash
+# Navigate to infra directory
 cd infra
+
+# Initialize Terraform
 terraform init
-terraform apply -auto-approve -var="project=medasr" -var="env=dev"
+
+# Create terraform.tfvars (copy from example)
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your values
+
+# Deploy infrastructure
+terraform apply -auto-approve
 ```
-
-### 2. Configure Speech Service Key
-
-After deployment, get the Speech service key and set it as an app setting:
-
-```bash
-# Get the resource group and speech account names from terraform output
-az cognitiveservices account keys list -g <resource-group> -n <speech-account-name>
-az webapp config appsettings set -g <resource-group> -n <webapp-name> --settings AZURE_SPEECH_KEY=<key>
-```
-
-### 3. Run Frontend
-
-Open `frontend/index.html` in your browser and configure:
-- WebSocket URL: `wss://<webapp-url>/ws`
-- Bearer Token: (from terraform output)
-- Language: `en-US`
-- Medical Mode: `true`
-
-### 4. Test Transcription
-
-1. Click "Connect" to establish WebSocket connection
-2. Click "Start" to begin recording
-3. Speak into your microphone
-4. View real-time partial and final captions
-5. Click "Stop" to end session and save transcript
 
 ## Project Structure
 
@@ -186,6 +183,49 @@ npx serve .
 | `ALLOWED_ORIGINS` | CORS origins | Localhost URLs |
 | `SESSION_TIMEOUT_SEC` | WebSocket timeout | `300` |
 
+## Deployment Options
+
+This project supports multiple deployment options to handle different Azure quota scenarios:
+
+### 🖥️ Virtual Machine (Recommended)
+- **File**: `infra/main.tf` (VM configuration)
+- **Script**: `./deploy-vm.sh`
+- **Pros**: No quota issues, full control, production-ready
+- **Cons**: Higher cost (~$15/month)
+- **Best for**: Production POCs, when quotas are exhausted
+
+### 🐳 Azure Container Instances
+- **File**: `infra/main-aci.tf.backup`
+- **Script**: `./deploy-alternative.sh` (option 2)
+- **Pros**: No App Service Plan needed, containerized
+- **Cons**: Limited scaling, higher cost than App Service
+- **Best for**: When App Service quotas are exhausted
+
+### ⚡ Azure Functions
+- **File**: `infra/main-functions.tf.backup`
+- **Script**: `./deploy-alternative.sh` (option 1)
+- **Pros**: Consumption plan, pay-per-use
+- **Cons**: Cold starts, limited WebSocket support
+- **Best for**: Low-traffic scenarios
+
+### 🌐 Azure App Service
+- **File**: `infra/main-app-service.tf.backup`
+- **Script**: `./deploy.sh`
+- **Pros**: Managed service, easy scaling
+- **Cons**: Quota limitations, higher cost
+- **Best for**: Standard web applications
+
+### 🔄 Switching Between Options
+```bash
+# Use the configuration switcher
+./switch-deployment.sh
+
+# Or manually switch files
+cd infra
+mv main.tf main-vm.tf.backup
+mv main-app-service.tf.backup main.tf
+```
+
 ## Security
 
 - **Authentication**: Bearer token required for all endpoints
@@ -195,10 +235,21 @@ npx serve .
 
 ## Cost Optimization
 
+### VM Deployment
+- **VM**: Standard_B1s (1 vCPU, 1 GB RAM) ~$15/month
+- **Storage**: Standard LRS (lowest cost)
+- **Speech**: S0 SKU (pay-as-you-go)
+
+### App Service Deployment
 - **App Service**: F1 plan (free tier with WebSocket support)
 - **Storage**: Standard LRS (lowest cost)
 - **Speech**: S0 SKU (pay-as-you-go)
-- **Auto-scaling**: Disabled for POC (enable for production)
+
+### Container/Functions Deployment
+- **Container**: Pay-per-use pricing
+- **Functions**: Consumption plan (pay-per-use)
+- **Storage**: Standard LRS (lowest cost)
+- **Speech**: S0 SKU (pay-as-you-go)
 
 ## Troubleshooting
 
