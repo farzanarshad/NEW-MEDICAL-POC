@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Transcription POC</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Medical Transcription POC</h1>
+            <p>Real-time speech-to-text with Azure Speech Services</p>
+        </header>
+
+        <div class="config-panel">
+            <div class="config-group">
+                <label for="wsUrl">WebSocket URL:</label>
+                <input type="text" id="wsUrl" placeholder="wss://your-app.azurewebsites.net/ws" value="wss://localhost:8000/ws">
+            </div>
+            
+            <div class="config-group">
+                <label for="bearerToken">Bearer Token:</label>
+                <input type="password" id="bearerToken" placeholder="Enter your bearer token">
+            </div>
+            
+            <div class="config-group">
+                <label for="language">Language:</label>
+                <select id="language">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
+                    <option value="de-DE">German</option>
+                </select>
+            </div>
+            
+            <div class="config-group">
+                <label>
+                    <input type="checkbox" id="medicalMode" checked>
+                    Medical Mode
+                </label>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button id="connectBtn" class="btn btn-primary">Connect</button>
+            <button id="startBtn" class="btn btn-success" disabled>Start Recording</button>
+            <button id="stopBtn" class="btn btn-danger" disabled>Stop Recording</button>
+            <button id="disconnectBtn" class="btn btn-secondary" disabled>Disconnect</button>
+        </div>
+
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="status-label">Connection:</span>
+                <span id="connectionStatus" class="status-value disconnected">Disconnected</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Recording:</span>
+                <span id="recordingStatus" class="status-value stopped">Stopped</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Latency:</span>
+                <span id="latencyValue" class="status-value">--</span>
+            </div>
+        </div>
+
+        <div class="transcription-panel">
+            <div class="partial-section">
+                <h3>Partial Results</h3>
+                <div id="partialText" class="partial-text">Waiting for speech...</div>
+            </div>
+            
+            <div class="final-section">
+                <h3>Final Results</h3>
+                <div id="finalResults" class="final-results">
+                    <div class="empty-state">No final results yet</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="session-panel">
+            <h3>Session Info</h3>
+            <div class="session-info">
+                <div class="info-item">
+                    <span class="info-label">Session ID:</span>
+                    <span id="sessionId" class="info-value">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Duration:</span>
+                    <span id="sessionDuration" class="info-value">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Audio Level:</span>
+                    <div class="audio-level-container">
+                        <div id="audioLevel" class="audio-level"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="error-panel" id="errorPanel" style="display: none;">
+            <div class="error-content">
+                <span class="error-message" id="errorMessage"></span>
+                <button class="error-close" onclick="hideError()">×</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
