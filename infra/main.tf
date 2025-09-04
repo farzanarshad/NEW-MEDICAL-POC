@@ -274,14 +274,20 @@ resource "azurerm_linux_virtual_machine" "main" {
 }
 
 # Role assignment for VM to access Storage
+# Note: This requires Owner/Contributor permissions on the subscription
+# If you don't have these permissions, you can skip this and use connection strings instead
 resource "azurerm_role_assignment" "storage_blob_contributor" {
+  count                = var.enable_rbac_assignments ? 1 : 0
   scope                = azurerm_storage_account.main.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_linux_virtual_machine.main.identity[0].principal_id
 }
 
 # Role assignment for VM to access Cognitive Services
+# Note: This requires Owner/Contributor permissions on the subscription
+# If you don't have these permissions, you can skip this and use API keys instead
 resource "azurerm_role_assignment" "cognitive_services_user" {
+  count                = var.enable_rbac_assignments ? 1 : 0
   scope                = azurerm_cognitive_account.speech.id
   role_definition_name = "Cognitive Services User"
   principal_id         = azurerm_linux_virtual_machine.main.identity[0].principal_id

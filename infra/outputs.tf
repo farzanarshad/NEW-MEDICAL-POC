@@ -52,7 +52,7 @@ output "speech_region" {
 
 output "managed_identity_principal_id" {
   description = "Principal ID of the managed identity"
-  value       = azurerm_linux_virtual_machine.main.identity[0].principal_id
+  value       = var.enable_rbac_assignments ? azurerm_linux_virtual_machine.main.identity[0].principal_id : "RBAC assignments disabled"
   sensitive   = true
 }
 
@@ -81,17 +81,22 @@ output "deployment_instructions" {
     1. Get the Speech service key:
        az cognitiveservices account keys list -g ${azurerm_resource_group.main.name} -n ${azurerm_cognitive_account.speech.name}
     
-    2. SSH into the VM and set the Speech service key:
+    2. Get the Storage connection string (if RBAC is disabled):
+       az storage account show-connection-string -g ${azurerm_resource_group.main.name} -n ${azurerm_storage_account.main.name}
+    
+    3. SSH into the VM and configure the application:
        ssh azureuser@${azurerm_public_ip.main.ip_address}
        sudo nano /opt/medical-transcribe/.env
-       # Add AZURE_SPEECH_KEY=<key_from_step_1>
+       # Add:
+       # AZURE_SPEECH_KEY=<key_from_step_1>
+       # AZURE_STORAGE_CONNECTION_STRING=<connection_string_from_step_2> (if RBAC disabled)
        sudo systemctl restart medical-transcribe
     
-    3. Open the frontend (frontend/index.html) and configure:
+    4. Open the frontend (frontend/index.html) and configure:
        - WebSocket URL: ws://${azurerm_public_ip.main.ip_address}/ws
        - Bearer Token: (see api_bearer_token output)
     
-    4. Test the application by connecting and starting a recording session.
+    5. Test the application by connecting and starting a recording session.
     
     VM Public IP: ${azurerm_public_ip.main.ip_address}
     SSH Command: ssh azureuser@${azurerm_public_ip.main.ip_address}

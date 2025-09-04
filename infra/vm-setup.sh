@@ -526,9 +526,19 @@ from loguru import logger
 class BlobStorageManager:
     def __init__(self):
         self._initialized = False
+        self._use_managed_identity = True
     
     async def initialize(self):
         """Initialize blob storage client"""
+        # Check if we have connection string (fallback to Managed Identity)
+        connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        if connection_string:
+            logger.info("Using connection string for storage authentication")
+            self._use_managed_identity = False
+        else:
+            logger.info("Using Managed Identity for storage authentication")
+            self._use_managed_identity = True
+        
         self._initialized = True
         logger.info("Blob storage initialized")
     
@@ -556,6 +566,11 @@ AZURE_SPEECH_REGION=${speech_region}
 AZURE_SPEECH_KEY=${speech_key}
 AZURE_STORAGE_ACCOUNT=${storage_account}
 AZURE_BLOB_CONTAINER=${blob_container}
+# For storage access, you can use either:
+# 1. Connection string (if RBAC is not enabled)
+# AZURE_STORAGE_CONNECTION_STRING=<connection_string>
+# 2. Managed Identity (if RBAC is enabled)
+# (no additional config needed)
 ASR_LANGUAGE=${asr_language}
 ASR_MEDICAL=${asr_medical}
 API_BEARER_TOKEN=${bearer_token}

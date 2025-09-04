@@ -73,6 +73,7 @@ location = "$LOCATION"
 asr_language = "en-US"
 asr_medical = true
 api_bearer_token = ""
+enable_rbac_assignments = false
 allowed_origins = [
   "http://localhost:5500",
   "http://127.0.0.1:5500",
@@ -94,6 +95,7 @@ terraform apply -auto-approve
 echo "📊 Getting deployment outputs..."
 RESOURCE_GROUP=$(terraform output -raw resource_group_name)
 SPEECH_NAME=$(terraform output -raw speech_account_name)
+STORAGE_ACCOUNT=$(terraform output -raw storage_account_name)
 VM_IP=$(terraform output -raw vm_public_ip)
 BEARER_TOKEN=$(terraform output -raw api_bearer_token)
 VM_PASSWORD=$(terraform output -raw vm_password)
@@ -129,13 +131,23 @@ echo ""
 echo "   2. Configure the Speech service key:"
 echo "      sudo nano /opt/medical-transcribe/.env"
 echo "      # Add: AZURE_SPEECH_KEY=$SPEECH_KEY"
+echo ""
+echo "   3. Configure Storage access (choose one):"
+echo "      Option A - Connection String (recommended for this setup):"
+echo "        az storage account show-connection-string -g $RESOURCE_GROUP -n $STORAGE_ACCOUNT"
+echo "        # Add: AZURE_STORAGE_CONNECTION_STRING=<connection_string>"
+echo "      Option B - Enable RBAC (requires Owner permissions):"
+echo "        # Edit terraform.tfvars: enable_rbac_assignments = true"
+echo "        # Re-run: terraform apply"
+echo ""
+echo "   4. Restart the application:"
 echo "      sudo systemctl restart medical-transcribe"
 echo ""
-echo "   3. Open frontend/index.html and configure:"
+echo "   5. Open frontend/index.html and configure:"
 echo "      - WebSocket URL: ws://$VM_IP/ws"
 echo "      - Bearer Token: $BEARER_TOKEN"
 echo ""
-echo "   4. Test the application by connecting and starting a recording session."
+echo "   6. Test the application by connecting and starting a recording session."
 echo ""
 echo "🔧 Useful commands:"
 echo "   Check app status: systemctl status medical-transcribe"

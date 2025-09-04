@@ -51,6 +51,12 @@ variable "app_service_plan_sku" {
   default     = "F1"
 }
 
+variable "enable_rbac_assignments" {
+  description = "Enable RBAC role assignments (requires Owner/Contributor permissions)"
+  type        = bool
+  default     = false
+}
+
 variable "speech_service_sku" {
   description = "Speech Service SKU"
   type        = string
