@@ -261,6 +261,11 @@ resource "azurerm_linux_virtual_machine" "main" {
     session_timeout = "300"
   }))
   
+  # Enable system-assigned managed identity
+  identity {
+    type = "SystemAssigned"
+  }
+  
   tags = {
     Project     = var.project
     Environment = var.env

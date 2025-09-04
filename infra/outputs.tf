@@ -3,14 +3,26 @@ output "resource_group_name" {
   value       = azurerm_resource_group.main.name
 }
 
-output "webapp_url" {
-  description = "URL of the web application"
-  value       = "https://${azurerm_linux_web_app.main.default_hostname}"
+output "vm_name" {
+  description = "Name of the virtual machine"
+  value       = azurerm_linux_virtual_machine.main.name
 }
 
-output "webapp_name" {
-  description = "Name of the web application"
-  value       = azurerm_linux_web_app.main.name
+output "vm_public_ip" {
+  description = "Public IP address of the VM"
+  value       = azurerm_public_ip.main.ip_address
+}
+
+output "vm_ssh_command" {
+  description = "SSH command to connect to the VM"
+  value       = "ssh azureuser@${azurerm_public_ip.main.ip_address}"
+  sensitive   = true
+}
+
+output "vm_password" {
+  description = "VM admin password"
+  value       = random_password.vm_password.result
+  sensitive   = true
 }
 
 output "storage_account_name" {
@@ -40,30 +52,13 @@ output "speech_region" {
 
 output "managed_identity_principal_id" {
   description = "Principal ID of the managed identity"
-  value       = azurerm_linux_web_app.main.identity[0].principal_id
+  value       = azurerm_linux_virtual_machine.main.identity[0].principal_id
   sensitive   = true
 }
 
 output "api_bearer_token" {
   description = "Generated API Bearer token"
   value       = local.bearer_token
-  sensitive   = true
-}
-
-output "vm_public_ip" {
-  description = "Public IP address of the VM"
-  value       = azurerm_public_ip.main.ip_address
-}
-
-output "vm_ssh_command" {
-  description = "SSH command to connect to the VM"
-  value       = "ssh azureuser@${azurerm_public_ip.main.ip_address}"
-  sensitive   = true
-}
-
-output "vm_password" {
-  description = "VM admin password"
-  value       = random_password.vm_password.result
   sensitive   = true
 }
 
