@@ -35,14 +35,11 @@ SOFT_DELETED_SPEECH=$(az cognitiveservices account list-deleted --query "[?name=
 
 if [ ! -z "$SOFT_DELETED_SPEECH" ]; then
     echo "⚠️  Found soft-deleted speech service: $SOFT_DELETED_SPEECH"
-    read -p "Do you want to purge it? (y/N): " PURGE_CONFIRM
-    if [[ $PURGE_CONFIRM =~ ^[Yy]$ ]]; then
-        echo "🗑️  Purging soft-deleted speech service..."
-        az cognitiveservices account purge --name grandsi-dev-speech --location eastus --resource-group grandsi-dev-rg
-        echo "✅ Soft-deleted speech service purged"
-    else
-        echo "ℹ️  Skipping purge. You may need to manually handle this."
-    fi
+    echo "🗑️  Purging soft-deleted speech service..."
+    az cognitiveservices account purge --name grandsi-dev-speech --location eastus --resource-group grandsi-dev-rg
+    echo "✅ Soft-deleted speech service purged"
+    echo "⏳ Waiting 30 seconds for purge to complete..."
+    sleep 30
 else
     echo "✅ No soft-deleted speech services found"
 fi
