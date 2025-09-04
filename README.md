@@ -195,7 +195,7 @@ npx serve .
 
 ## Cost Optimization
 
-- **App Service**: B1 plan (minimal cost with WebSocket support)
+- **App Service**: F1 plan (free tier with WebSocket support)
 - **Storage**: Standard LRS (lowest cost)
 - **Speech**: S0 SKU (pay-as-you-go)
 - **Auto-scaling**: Disabled for POC (enable for production)

@@ -48,7 +48,7 @@ variable "allowed_origins" {
 variable "app_service_plan_sku" {
   description = "App Service Plan SKU"
   type        = string
-  default     = "B1"
+  default     = "F1"
 }
 
 variable "speech_service_sku" {
