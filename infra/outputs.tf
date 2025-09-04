@@ -50,9 +50,31 @@ output "api_bearer_token" {
   sensitive   = true
 }
 
+output "vm_public_ip" {
+  description = "Public IP address of the VM"
+  value       = azurerm_public_ip.main.ip_address
+}
+
+output "vm_ssh_command" {
+  description = "SSH command to connect to the VM"
+  value       = "ssh azureuser@${azurerm_public_ip.main.ip_address}"
+  sensitive   = true
+}
+
+output "vm_password" {
+  description = "VM admin password"
+  value       = random_password.vm_password.result
+  sensitive   = true
+}
+
+output "application_url" {
+  description = "URL of the application"
+  value       = "http://${azurerm_public_ip.main.ip_address}"
+}
+
 output "websocket_url" {
   description = "WebSocket URL for the application"
-  value       = "wss://${azurerm_linux_web_app.main.default_hostname}/ws"
+  value       = "ws://${azurerm_public_ip.main.ip_address}/ws"
 }
 
 output "deployment_instructions" {
@@ -64,16 +86,22 @@ output "deployment_instructions" {
     1. Get the Speech service key:
        az cognitiveservices account keys list -g ${azurerm_resource_group.main.name} -n ${azurerm_cognitive_account.speech.name}
     
-    2. Set the Speech service key as an app setting:
-       az webapp config appsettings set -g ${azurerm_resource_group.main.name} -n ${azurerm_linux_web_app.main.name} --settings AZURE_SPEECH_KEY=<key_from_step_1>
+    2. SSH into the VM and set the Speech service key:
+       ssh azureuser@${azurerm_public_ip.main.ip_address}
+       sudo nano /opt/medical-transcribe/.env
+       # Add AZURE_SPEECH_KEY=<key_from_step_1>
+       sudo systemctl restart medical-transcribe
     
     3. Open the frontend (frontend/index.html) and configure:
-       - WebSocket URL: wss://${azurerm_linux_web_app.main.default_hostname}/ws
+       - WebSocket URL: ws://${azurerm_public_ip.main.ip_address}/ws
        - Bearer Token: (see api_bearer_token output)
     
     4. Test the application by connecting and starting a recording session.
     
-    WebSocket URL: wss://${azurerm_linux_web_app.main.default_hostname}/ws
+    VM Public IP: ${azurerm_public_ip.main.ip_address}
+    SSH Command: ssh azureuser@${azurerm_public_ip.main.ip_address}
+    Application URL: http://${azurerm_public_ip.main.ip_address}
+    WebSocket URL: ws://${azurerm_public_ip.main.ip_address}/ws
   EOT
   sensitive = true
 }
