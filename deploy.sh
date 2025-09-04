@@ -79,7 +79,6 @@ allowed_origins = [
   "http://localhost:3000"
 ]
 app_service_plan_sku = "B1"
-storage_account_sku = "Standard_LRS"
 speech_service_sku = "S0"
 EOF
 

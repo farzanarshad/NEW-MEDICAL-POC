@@ -51,12 +51,6 @@ variable "app_service_plan_sku" {
   default     = "B1"
 }
 
-variable "storage_account_sku" {
-  description = "Storage Account SKU"
-  type        = string
-  default     = "Standard_LRS"
-}
-
 variable "speech_service_sku" {
   description = "Speech Service SKU"
   type        = string

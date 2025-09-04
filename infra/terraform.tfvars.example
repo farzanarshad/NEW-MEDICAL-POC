@@ -25,5 +25,4 @@ allowed_origins = [
 
 # Resource SKUs (minimal cost for POC)
 app_service_plan_sku = "B1"
-storage_account_sku = "Standard_LRS"
 speech_service_sku = "S0"
