@@ -578,6 +578,12 @@ ALLOWED_ORIGINS=${allowed_origins}
 SESSION_TIMEOUT_SEC=${session_timeout}
 EOF
 
+# Verify application files exist
+echo "🔍 Verifying application files..."
+ls -la /opt/medical-transcribe/
+echo "📁 Application directory contents:"
+find /opt/medical-transcribe/ -type f -name "*.py" -o -name "*.env" | head -10
+
 # Create systemd service
 echo "🔧 Creating systemd service..."
 cat > /etc/systemd/system/medical-transcribe.service << EOF
@@ -593,6 +599,8 @@ Environment=PATH=/opt/medical-transcribe/venv/bin
 ExecStart=/opt/medical-transcribe/venv/bin/python app.py
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
@@ -602,7 +610,22 @@ EOF
 echo "🚀 Starting the application..."
 systemctl daemon-reload
 systemctl enable medical-transcribe
-systemctl start medical-transcribe
+
+# Wait a moment for the service to start
+sleep 5
+
+# Check if the service started successfully
+if systemctl is-active --quiet medical-transcribe; then
+    echo "✅ Application started successfully"
+else
+    echo "❌ Application failed to start. Checking logs..."
+    journalctl -u medical-transcribe --no-pager -n 20
+    echo "🔧 Attempting to start manually..."
+    cd /opt/medical-transcribe
+    source venv/bin/activate
+    python app.py &
+    echo "✅ Application started manually"
+fi
 
 # Configure nginx as reverse proxy
 echo "🌐 Configuring nginx..."
