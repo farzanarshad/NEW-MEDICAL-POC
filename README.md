@@ -1,10 +1,11 @@
 # Azure Medical Transcription POC
 
-A production-ready proof of concept for real-time medical transcription using Azure Speech Services, FastAPI, and WebSockets.
+A production-ready proof of concept for real-time medical transcription using Azure Speech Services, FastAPI, and WebSockets. **Optimized for Malayalam language support.**
 
 ## Features
 
 - **Real-time Transcription**: Live partial and final captions via WebSocket
+- **Malayalam Language Support**: Optimized for Malayalam medical terminology
 - **Medical Speech Recognition**: Optimized for medical terminology
 - **Secure Authentication**: Bearer token authentication
 - **Cloud Storage**: Automatic transcript storage to Azure Blob Storage
@@ -177,7 +178,7 @@ npx serve .
 | `AZURE_SPEECH_REGION` | Azure Speech region | From Speech account |
 | `AZURE_SPEECH_KEY` | Speech service key | Required |
 | `AZURE_BLOB_CONTAINER` | Blob container name | `transcripts` |
-| `ASR_LANGUAGE` | Recognition language | `en-US` |
+| `ASR_LANGUAGE` | Recognition language | `ml-IN` (Malayalam) |
 | `ASR_MEDICAL` | Medical mode | `true` |
 | `API_BEARER_TOKEN` | Authentication token | Auto-generated |
 | `ALLOWED_ORIGINS` | CORS origins | Localhost URLs |

@@ -18,7 +18,7 @@ variable "location" {
 variable "asr_language" {
   description = "Default speech recognition language"
   type        = string
-  default     = "en-US"
+  default     = "ml-IN"  # Malayalam (India)
 }
 
 variable "asr_medical" {

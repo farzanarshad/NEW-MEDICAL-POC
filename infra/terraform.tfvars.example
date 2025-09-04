@@ -9,7 +9,7 @@ env = "dev"
 location = "eastus"
 
 # Speech recognition settings
-asr_language = "en-US"
+asr_language = "ml-IN"  # Malayalam (India)
 asr_medical = true
 
 # Authentication (leave empty to auto-generate)

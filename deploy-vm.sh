@@ -70,7 +70,7 @@ cat > terraform.tfvars << EOF
 project = "$PROJECT_NAME"
 env = "$ENV_NAME"
 location = "$LOCATION"
-asr_language = "en-US"
+asr_language = "ml-IN"
 asr_medical = true
 api_bearer_token = ""
 enable_rbac_assignments = false
