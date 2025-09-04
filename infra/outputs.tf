@@ -69,11 +69,11 @@ output "deployment_instructions" {
     
     3. Open the frontend (frontend/index.html) and configure:
        - WebSocket URL: wss://${azurerm_linux_web_app.main.default_hostname}/ws
-       - Bearer Token: ${local.bearer_token}
+       - Bearer Token: (see api_bearer_token output)
     
     4. Test the application by connecting and starting a recording session.
     
-    API Bearer Token: ${local.bearer_token}
     WebSocket URL: wss://${azurerm_linux_web_app.main.default_hostname}/ws
   EOT
+  sensitive = true
 }
