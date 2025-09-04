@@ -266,6 +266,9 @@ resource "azurerm_linux_virtual_machine" "main" {
     type = "SystemAssigned"
   }
   
+  # Ensure the VM waits for cloud-init to complete
+  provision_vm_agent = true
+  
   tags = {
     Project     = var.project
     Environment = var.env
